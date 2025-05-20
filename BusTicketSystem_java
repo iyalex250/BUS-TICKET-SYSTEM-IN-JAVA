@@ -1,0 +1,343 @@
+/* 
+A java project that will prompt a user to perform 
+the following transaction in 
+BUS TICKETING SYSTEM:
+
+1.Customer can create own account to Book Ticket
+2.Customer can login using email and password
+3.Customer can Book Bus Ticket by selecting source and destination
+4.Customer can cancel Bus Ticket before departure
+5.Admin can can confirm booking of customers ticket
+6.Admin can Add Bus with Details.
+7.Admin can Change Bus Departure Dates.
+8.Admin can delete bus.
+*/
+
+import java.util.*;
+class User 
+{
+    String email;
+    String password;
+    String name;
+
+    User(String name, String email, String password) 
+    {
+        this.name = name;
+        this.email = email;
+        this.password = password;
+    }
+}
+
+class Bus 
+{
+    String busId;
+    String source;
+    String destination;
+    String departureDate;
+    int seatsAvailable;
+
+    Bus(String busId, String source, String destination, String departureDate, int seatsAvailable) {
+        this.busId = busId;
+        this.source = source;
+        this.destination = destination;
+        this.departureDate = departureDate;
+        this.seatsAvailable = seatsAvailable;
+    }
+}
+
+class Booking 
+{
+    String bookingId;
+    String userEmail;
+    String busId;
+    String status;
+
+    Booking(String bookingId, String userEmail, String busId) {
+        this.bookingId = bookingId;
+        this.userEmail = userEmail;
+        this.busId = busId;
+        this.status = "Pending";
+    }
+}
+
+public class BusTicketSystem 
+{
+    private static ArrayList<User> users = new ArrayList<>();
+    private static ArrayList<Bus> buses = new ArrayList<>();
+    private static ArrayList<Booking> bookings = new ArrayList<>();
+    private static Scanner scanner = new Scanner(System.in);
+    private static User loggedInUser = null;
+
+    public static void main(String[] args) 
+    {
+        while (true) 
+        {
+            System.out.println("\nBus Ticket Booking System\n");
+            System.out.println("\n..........................\n");
+            System.out.println("\nPowered by @iyalex | Adam  \n");
+            System.out.println("1. Create Account");
+            System.out.println("2. Login");
+            System.out.println("3. Book Ticket");
+            System.out.println("4. Cancel Ticket");
+            System.out.println("5. Admin Menu");
+            System.out.println("6. Exit");
+            System.out.print("Choose an option: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // Consume newline
+
+            switch (choice) 
+            {
+                case 1:
+                    createAccount();
+                    break;
+                case 2:
+                    login();
+                    break;
+                case 3:
+                    if (loggedInUser != null) bookTicket();
+                    else System.out.println("Please login first!");
+                    break;
+                case 4:
+                    if (loggedInUser != null) cancelTicket();
+                    else System.out.println("Please login first!");
+                    break;
+                case 5:
+                    adminMenu();
+                    break;
+                case 6:
+                    System.out.println("..THANK YOU FOR USING AD-HOST SYSTEM!!..");
+                    System.exit(0);
+                default:
+                    System.out.println("Invalid option!");
+            }
+        }
+    }
+
+    private static void createAccount() 
+    {
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        // Check if email already exists
+        for (User user : users) 
+        {
+            if (user.email.equals(email)) 
+            {
+                System.out.println("Email already exists!");
+                return;
+            }
+        }
+
+        users.add(new User(name, email, password));
+        System.out.println("Account created successfully!");
+    }
+
+    private static void login() 
+    {
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+
+        for (User user : users) 
+        {
+            if (user.email.equals(email) && user.password.equals(password)) {
+                loggedInUser = user;
+                System.out.println("Login successful! Welcome " + user.name);
+                return;
+            }
+        }
+        System.out.println("Invalid credentials!");
+    }
+
+    private static void bookTicket() 
+    {
+        System.out.println("\nAvailable Buses:");
+        for (Bus bus : buses) 
+        {
+            System.out.println("Bus ID: " + bus.busId + ", Source: " + bus.source +
+                    ", Destination: " + bus.destination + ", Date: " + bus.departureDate +
+                    ", Seats: " + bus.seatsAvailable);
+        }
+
+        System.out.print("Enter Bus ID to book: ");
+        String busId = scanner.nextLine();
+
+        Bus selectedBus = null;
+        for (Bus bus : buses) 
+        {
+            if (bus.busId.equals(busId) && bus.seatsAvailable > 0) {
+                selectedBus = bus;
+                break;
+            }
+        }
+
+        if (selectedBus == null) 
+        {
+            System.out.println("Invalid Bus ID or no seats available!");
+            return;
+        }
+
+        String bookingId = "B" + (bookings.size() + 1);
+        bookings.add(new Booking(bookingId, loggedInUser.email, busId));
+        selectedBus.seatsAvailable--;
+        System.out.println("Ticket booked successfully! Booking ID: " + bookingId);
+    }
+
+    private static void cancelTicket() 
+    {
+        System.out.print("Enter Booking ID: ");
+        String bookingId = scanner.nextLine();
+
+        for (Booking booking : bookings) 
+        {
+            if (booking.bookingId.equals(bookingId) && booking.userEmail.equals(loggedInUser.email) &&
+                    booking.status.equals("Confirmed")) {
+                bookings.remove(booking);
+                for (Bus bus : buses) 
+                {
+                    if (bus.busId.equals(booking.busId)) {
+                        bus.seatsAvailable++;
+                        break;
+                    }
+                }
+                System.out.println("Ticket cancelled successfully!");
+                return;
+            }
+        }
+
+        System.out.println("Booking not found or already cancelled!");
+    }
+
+    private static void adminMenu() 
+    {
+        System.out.print("Enter admin password: ");
+        String adminPassword = scanner.nextLine();
+        if (!adminPassword.equals("admin123")) 
+        { 
+        // Simple password check
+            System.out.println("Invalid admin password!");
+            return;
+        }
+
+        while (true)
+         {
+            System.out.println("\nAdmin Menu");
+            System.out.println("1. Confirm Booking");
+            System.out.println("2. Add Bus");
+            System.out.println("3. Change Bus Departure Date");
+            System.out.println("4. Delete Bus");
+            System.out.println("5. Back to Main Menu");
+            System.out.print("Choose an option: ");
+
+            int choice = scanner.nextInt();
+            scanner.nextLine();
+
+            switch (choice) 
+            {
+                case 1:
+                    confirmBooking();
+                    break;
+                case 2:
+                    addBus();
+                    break;
+                case 3:
+                    changeBusDate();
+                    break;
+                case 4:
+                    deleteBus();
+                    break;
+                case 5:
+                    return;
+                default:
+                    System.out.println("Invalid option!");
+            }
+        }
+    }
+
+    private static void confirmBooking() 
+    {
+        System.out.println("\nPending Bookings:");
+        for (Booking booking : bookings) 
+        {
+            if (booking.status.equals("Pending")) {
+                System.out.println("Booking ID: " + booking.bookingId + ", User: " + booking.userEmail +
+                        ", Bus ID: " + booking.busId);
+            }
+        }
+
+        System.out.print("Enter Booking ID to confirm: ");
+        String bookingId = scanner.nextLine();
+
+        for (Booking booking : bookings) 
+        {
+            if (booking.bookingId.equals(bookingId) && booking.status.equals("Pending")) {
+                booking.status = "Confirmed";
+                System.out.println("Booking confirmed successfully!");
+                return;
+            }
+        }
+        System.out.println("Booking not found or already confirmed!");
+    }
+
+    private static void addBus() 
+    {
+        System.out.print("Enter Bus ID: ");
+        String busId = scanner.nextLine();
+        System.out.print("Enter Source: ");
+        String source = scanner.nextLine();
+        System.out.print("Enter Destination: ");
+        String destination = scanner.nextLine();
+        System.out.print("Enter Departure Date (DD-MM-YYYY): ");
+        String date = scanner.nextLine();
+        System.out.print("Enter Number of Seats: ");
+        int seats = scanner.nextInt();
+        scanner.nextLine();
+
+        buses.add(new Bus(busId, source, destination, date, seats));
+        System.out.println("Bus added successfully!");
+    }
+
+    private static void changeBusDate() 
+    {
+        System.out.print("Enter Bus ID: ");
+        String busId = scanner.nextLine();
+
+        for (Bus bus : buses) 
+        {
+            if (bus.busId.equals(busId)) 
+            {
+                System.out.print("Enter new Departure Date (DD-MM-YYYY): ");
+                String newDate = scanner.nextLine();
+                bus.departureDate = newDate;
+                System.out.println("Bus departure date updated successfully!");
+                return;
+            }
+        }
+        System.out.println("Bus not found!");
+    }
+
+    private static void deleteBus() 
+    {
+        System.out.print("Enter Bus ID: ");
+        String busId = scanner.nextLine();
+
+        for (Bus bus : buses) 
+        {  
+            if (bus.busId.equals(busId)) 
+            {
+                buses.remove(bus);
+                // Remove associated bookings
+                bookings.removeIf(booking -> booking.busId.equals(busId));
+                System.out.println("Bus deleted successfully!");
+                return;
+            }
+        }
+        System.out.println("Bus not found!");
+    }
+}
